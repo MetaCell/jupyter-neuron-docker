@@ -1,4 +1,5 @@
 FROM jupyter/base-notebook:eb70bcf1a292
+MAINTAINER Facundo Rodriguez "facundo@metacell.us"
 USER root
 RUN apt-get -qq update
 RUN apt-get install -y \
