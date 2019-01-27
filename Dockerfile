@@ -1,44 +1,67 @@
-FROM jupyter/base-notebook:eb70bcf1a292
-MAINTAINER Facundo Rodriguez "facundo@metacell.us"
+FROM jupyter/base-notebook:87210526f381
+
+LABEL maintainer="Facundo Rodriguez <facundo@metacell.us>"
+
+# external config
+ARG NEURON_VERSION=7.6.2
+
+# configuration
+ENV PATH /opt/conda/neuron/x86_64/bin:$PATH 
+
 USER root
-RUN apt-get -qq update
-RUN apt-get install -y \
-        locales \
-        wget \
-        gcc \
-        g++ \
-        build-essential \
-        libncurses-dev \
-        libpython-dev \
-        cython \
-        libx11-dev \
-        git \
-        bison \
-        flex \
-        automake \ 
-        libtool \ 
-        libxext-dev \
-        libncurses-dev \
-        xfonts-100dpi \ 
-        libopenmpi-dev \
-        make \
-        zlib1g-dev \
-        unzip \
-        vim \
-        libpng-dev
-# Switch to non sudo, create a Python 3 virtual environment 
-USER $NB_USER
-RUN conda create --name snakes python=3.7
-# Install latest iv and NEURON
-RUN git clone --branch 7.6.2 https://github.com/neuronsimulator/nrn
-WORKDIR nrn
-RUN ./build.sh
-# Activate conda to configure nrn with the right python version
-RUN /bin/bash -c "source activate snakes && ./configure --without-x --with-nrnpython=python3 --without-paranrn --prefix='/home/jovyan/work/nrn/' --without-iv"
-RUN make --silent -j4
-RUN make --silent install -j4
-# Install NEURON python
-WORKDIR src/nrnpython
-ENV PATH="/home/jovyan/work/nrn/x86_64/bin:${PATH}"
-RUN /bin/bash -c "source activate snakes && python setup.py install"
-WORKDIR ../../../
+
+# dont install (recommends || suggestions) && avoid debconf warnings
+RUN echo 'APT::Install-Recommends "0";' >> /etc/apt/apt.conf && \
+    echo 'APT::Install-Suggests "0";' >> /etc/apt/apt.conf &&\
+    echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
+
+# NEURON requirements
+RUN apt-get update &&\
+  apt-get install -y \
+    automake \
+    bison \
+    bzip2 \
+    ca-certificates \
+    curl \
+    flex \
+    g++ \
+    git \
+    libncurses-dev \
+    libpng-dev \
+    libreadline-dev \
+    libtool \
+    make &&\
+  rm -rf /root/.cache &&\
+  rm -rf /var/lib/apt/lists/* /var/log/dpkg.log
+
+USER $NB_UID
+
+# install NEURON && some cleaning
+RUN mkdir /opt/conda/neuron &&\
+  npm config set package-lock 0 &&\
+  cd /tmp &&\
+  git clone --depth 1 -b $NEURON_VERSION https://github.com/neuronsimulator/nrn &&\
+  cd nrn &&\
+  ./build.sh &&\
+  ./configure \
+    --without-x \
+    --with-nrnpython=python3 \
+    --without-paranrn \
+    --prefix='/opt/conda/neuron' \
+    --without-iv \
+    --without-nrnoc-x11 \
+    --silent &&\
+  make --silent -j4 &&\
+  make --silent install -j4 &&\
+  cd src/nrnpython &&\
+  python setup.py install &&\
+  cd / &&\
+  rm -rf /tmp/* &&\
+  rm -rf /opt/conda/pkgs &&\
+  conda clean -tipsy
+
+WORKDIR $HOME
+
+EXPOSE 8000
+
+CMD jupyter notebook
