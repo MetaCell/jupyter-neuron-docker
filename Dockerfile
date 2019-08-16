@@ -60,6 +60,10 @@ RUN mkdir /opt/conda/neuron &&\
   rm -rf /opt/conda/pkgs &&\
   conda clean -tipsy
 
+RUN conda install --quiet --yes \
+  'jupyterhub=1.0.0' && \
+  conda clean --all -y
+
 WORKDIR $HOME
 
 EXPOSE 8000
