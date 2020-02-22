@@ -1,4 +1,4 @@
-FROM jupyter/base-notebook:87210526f381
+FROM jupyter/base-notebook:python-3.7.4
 
 LABEL maintainer="Facundo Rodriguez <facundo@metacell.us>"
 
