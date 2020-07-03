@@ -1,12 +1,15 @@
-FROM jupyter/base-notebook:87210526f381
+FROM jupyter/base-notebook:hub-1.1.0
 
 LABEL maintainer="Facundo Rodriguez <facundo@metacell.us>"
 
 # external config
-ARG NEURON_VERSION=7.6.2
+ARG NEURON_VERSION=7.8.0
 
 # configuration
 ENV PATH /opt/conda/neuron/x86_64/bin:$PATH 
+
+# Fixes ncurses error downstream
+RUN conda uninstall --force readline ncurses
 
 USER root
 
@@ -59,10 +62,6 @@ RUN mkdir /opt/conda/neuron &&\
   rm -rf /tmp/* &&\
   rm -rf /opt/conda/pkgs &&\
   conda clean -tipsy
-
-RUN conda install --quiet --yes \
-  'jupyterhub=1.0.0' && \
-  conda clean --all -y
 
 WORKDIR $HOME
 
