@@ -2,9 +2,6 @@ FROM jupyter/base-notebook:hub-1.1.0
 
 LABEL maintainer="Facundo Rodriguez <facundo@metacell.us>"
 
-# configuration
-ENV PATH /opt/conda/neuron/x86_64/bin:$PATH 
-
 # Fixes ncurses error downstream
 RUN conda uninstall --force readline ncurses
 
