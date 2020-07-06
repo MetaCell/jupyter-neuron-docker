@@ -2,9 +2,6 @@ FROM jupyter/base-notebook:hub-1.1.0
 
 LABEL maintainer="Facundo Rodriguez <facundo@metacell.us>"
 
-# external config
-ARG NEURON_VERSION=7.8.0
-
 # configuration
 ENV PATH /opt/conda/neuron/x86_64/bin:$PATH 
 
@@ -38,30 +35,6 @@ RUN apt-get update &&\
   rm -rf /var/lib/apt/lists/* /var/log/dpkg.log
 
 USER $NB_UID
-
-# install NEURON && some cleaning
-RUN mkdir /opt/conda/neuron &&\
-  npm config set package-lock 0 &&\
-  cd /tmp &&\
-  git clone --depth 1 -b $NEURON_VERSION https://github.com/neuronsimulator/nrn &&\
-  cd nrn &&\
-  ./build.sh &&\
-  ./configure \
-    --without-x \
-    --with-nrnpython=python3 \
-    --without-paranrn \
-    --prefix='/opt/conda/neuron' \
-    --without-iv \
-    --without-nrnoc-x11 \
-    --silent &&\
-  make --silent -j4 &&\
-  make --silent install -j4 &&\
-  cd src/nrnpython &&\
-  python setup.py install &&\
-  cd / &&\
-  rm -rf /tmp/* &&\
-  rm -rf /opt/conda/pkgs &&\
-  conda clean -tipsy
 
 WORKDIR $HOME
 
